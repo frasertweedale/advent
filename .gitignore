@@ -1,0 +1,7 @@
+dist
+.stack-work
+.ghc.environment.*
+cabal.project.local
+dist-newstyle
+*.o
+*.hi

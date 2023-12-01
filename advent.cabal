@@ -1,0 +1,45 @@
+cabal-version:      3.0
+name:               advent
+version:            0.1.0.0
+synopsis:           Advent of Code solutions
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Fraser Tweedale
+maintainer:         frase@frase.id.au
+copyright:          Copyright 2023 Fraser Tweedale
+category:           Game
+build-type:         Simple
+
+common common
+  default-language: Haskell2010
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Werror=missing-methods
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-export-lists
+    -Wnoncanonical-monad-instances
+    -Wpartial-fields
+    -Wredundant-constraints
+    -fhide-source-paths
+    -Wunused-packages
+    -Winvalid-haddock
+    -Werror=unicode-bidirectional-format-characters
+    -Wimplicit-lift
+    -Woperator-whitespace
+    -Wredundant-bang-patterns
+  if impl(ghc >= 9.4)
+    ghc-options:
+      -Wredundant-strictness-flags
+
+executable advent
+    import:           common
+    hs-source-dirs:   src
+    main-is:          Main.hs
+    other-modules:
+      Y2023
+      Y2023.D01
+    build-depends:
+      base >= 4.16
