@@ -1,4 +1,7 @@
-module Y2023.D01 (solution) where
+module Y2023.D01 (solutions) where
 
-solution :: IO ()
-solution = putStrLn "hello world"
+solutions :: [IO ()]
+solutions = [s1]
+
+s1 :: IO ()
+s1 = interact (unlines . fmap reverse . lines)
