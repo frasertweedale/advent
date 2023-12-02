@@ -12,6 +12,7 @@ module Util.Parser
 import Control.Applicative (Alternative(..))
 import Data.Char (isDigit)
 import Data.List (isPrefixOf)
+import Data.List.NonEmpty (NonEmpty(..))
 
 newtype Parser a = Parser
   { runParser :: String -> Maybe (a, String) }
@@ -56,5 +57,5 @@ string match = Parser $ \s ->
     then Just (match, drop (length match) s)
     else Nothing
 
-sepBy :: Parser a -> Parser sep -> Parser [a]
-sepBy p sep = (:) <$> p <*> many (sep *> p)
+sepBy :: Parser a -> Parser sep -> Parser (NonEmpty a)
+sepBy p sep = (:|) <$> p <*> many (sep *> p)

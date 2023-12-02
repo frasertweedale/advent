@@ -2,6 +2,7 @@
 
 module Y2023.D02 (solutions) where
 
+import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (mapMaybe)
 import Data.Semigroup (Max(..))
 
@@ -17,9 +18,9 @@ s1 strat = getContents >>= print . sum . mapMaybe (play strat) . lines
 
 data Colour = R | G | B
 
-data Game = Game Int [Round]
+data Game = Game Int (NonEmpty Round)
 
-type Round = [(Colour, Int)]
+type Round = NonEmpty (Colour, Int)
 
 colourCountValid :: Colour -> Int -> Bool
 colourCountValid colour n = case colour of
