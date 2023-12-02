@@ -39,7 +39,9 @@ executable advent
     hs-source-dirs:   src
     main-is:          Main.hs
     other-modules:
+      Util.Parser
       Y2023
       Y2023.D01
+      Y2023.D02
     build-depends:
       base >= 4.16
