@@ -1,15 +1,19 @@
 module Y2023.D03 (solutions) where
 
 import Data.Char (isDigit)
+import Data.List.NonEmpty (NonEmpty(..), groupAllWith)
 import Data.Maybe (mapMaybe)
 
 import Util.Parser
 
 solutions :: [IO ()]
-solutions = [s1]
+solutions = [s1, s2]
 
 s1 :: IO ()
 s1 = getContents >>= print . sumPartNumbers . lines
+
+s2 :: IO ()
+s2 = getContents >>= print . sumGearRatios . lines
 
 type Location =
   ( Int {- y (line number) -}
@@ -26,6 +30,25 @@ sumPartNumbers matrix = do
       if locValid matrix loc
         then Just val
         else Nothing
+
+sumGearRatios :: [String] -> Int
+sumGearRatios matrix =
+  sum
+    $ fmap gearRatio
+    $ groupAllWith fst gearMap  -- group map by gear location
+  where
+    gearMap = numbersWithLocation matrix >>= gearMapEntries
+
+    -- map a part,location pair to list of gear-location,part pairs
+    gearMapEntries :: (Int, Location) -> [(Location, Int)]
+    gearMapEntries (val,loc) =
+      fmap (\loc' -> (loc',val))
+      $ filter (\loc' -> getCharAt matrix loc' == '*')
+      $ surroundingCoords loc
+
+    gearRatio :: NonEmpty (Location, Int) -> Int
+    gearRatio ((_,p1) :| [(_,p2)])  = p1 * p2  -- exactly two parts
+    gearRatio _                     = 0        -- other cases
 
 numbersWithLocation :: [String] -> [(Int, Location)]
 numbersWithLocation matrix =
