@@ -3,6 +3,7 @@ module Util.Parser
   , endOfInput
   , satisfy
   , char
+  , spaces
   , string
   , int
   , sepBy
@@ -50,6 +51,11 @@ int :: Parser Int
 int = read <$> digits
   where
   digits = (:) <$> satisfy isDigit <*> many (satisfy isDigit)
+
+-- | Zero or more spaces
+spaces :: Parser [Char]
+spaces = many (char ' ')
+
 
 string :: String -> Parser String
 string match = Parser $ \s ->
