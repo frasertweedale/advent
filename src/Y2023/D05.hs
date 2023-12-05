@@ -3,6 +3,8 @@
 module Y2023.D05 (solutions) where
 
 import Data.Char (isAlpha)
+import Data.Foldable (toList)
+import Data.List (sort, sortOn)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (fromMaybe)
 import Data.Monoid (First(..))
@@ -10,15 +12,15 @@ import Data.Monoid (First(..))
 import Util.Parser
 
 solutions :: [IO ()]
-solutions = [s1]
+solutions = [s1 go1, s1 go2]
 
-s1 :: IO ()
-s1 =
+s1 :: (Input -> Int) -> IO ()
+s1 go =
   getContents
   >>= print . go . maybe (error "parse failed") fst . runParser parseInput
 
-go :: Input -> Int
-go (seeds, maps) =
+go1 :: Input -> Int
+go1 (seeds, maps) =
   minimum $ foldl step seeds maps
   where
     step xs (_, rangeMaps) = fmap (next rangeMaps) xs
@@ -29,6 +31,61 @@ doRangeMap :: Int -> RangeMap -> Maybe Int
 doRangeMap x (dst0, src0, size)
   | x >= src0 && x < src0 + size  = Just $ dst0 + (x - src0)
   | otherwise                     = Nothing
+
+go2 :: Input -> Int
+go2 (seeds, maps) =
+  minimum . fmap fst $ foldl step (pairUp (toList seeds)) maps
+  where
+    step seedRanges (_, rangeMaps) =
+      mapRanges
+        (sort seedRanges)
+        (sortOn (\(_,srcLo,_)->srcLo) $ toList rangeMaps)
+              -- ^ sort by source range lower boundary
+
+pairUp :: [a] -> [(a,a)]
+pairUp (x:y:xs) = (x,y) : pairUp xs
+pairUp _ = []
+
+-- Map ranges to ranges.  Inputs are assumed sorted.
+mapRanges :: [(Int,Int)] -> [RangeMap] -> [(Int,Int)]
+mapRanges [] _ = []
+mapRanges l [] = l
+mapRanges inSpans@((inLo,inSize):inTail) rangeMap@((dstLo,srcLo,mapSize):mapTail)
+  | inLo < srcLo =
+      -- pass through the non-overlapping prefix (if any)
+      -- Examples: iiii   | iiii
+      --             rrrr |     rrrr
+      let
+        preLo = inLo
+        preSize = min inSize (srcLo - inLo)
+        pre = (preLo,preSize)
+        restLo = preLo + preSize
+        restSize = inSize - preSize
+        rest = (restLo,restSize)
+      in
+        pre : mapRanges (if restSize == 0 then inTail else rest:inTail) rangeMap
+  | inLo < srcLo + mapSize =
+      -- map the overlapping segment
+      -- Examples: iiii |   iiii | iiii |   ii   --input
+      --           rr   | rrrr   | rrrr | rrrrrr --range
+      --           ss   |   ss   | ssss |   ss   --seg
+      --             oo |     oo |      |        --rest
+      --
+      let
+        segLo = max srcLo inLo
+        segSize = min (inLo + inSize) (srcLo + mapSize) - segLo
+        segMapped = (segLo - srcLo + dstLo, segSize)
+        restLo = segLo + segSize
+        restSize = inSize - segSize
+        rest = (restLo,restSize)
+      in
+        segMapped
+          : mapRanges
+              (if restSize == 0 then inTail else rest:inTail)
+              (if inLo + inSize < srcLo + mapSize then rangeMap else mapTail)
+  | otherwise =
+      -- inLo >= srcLo + mapSize.  Drop this map and recurse.
+      mapRanges inSpans mapTail
 
 type Input = (NonEmpty Seed, NonEmpty ResourceMap)
 type Seed = Int
