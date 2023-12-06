@@ -5,6 +5,7 @@ import qualified Y2023.D02
 import qualified Y2023.D03
 import qualified Y2023.D04
 import qualified Y2023.D05
+import qualified Y2023.D06
 
 days :: [[IO ()]]
 days =
@@ -13,4 +14,5 @@ days =
   , Y2023.D03.solutions
   , Y2023.D04.solutions
   , Y2023.D05.solutions
+  , Y2023.D06.solutions
   ]
