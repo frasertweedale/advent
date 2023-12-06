@@ -12,7 +12,7 @@ import Data.Monoid (First(..))
 import Util.Parser
 
 solutions :: [IO ()]
-solutions = [s1 go1, s1 go2]
+solutions = [s1 go1, s1 go2, s1 go1']
 
 s1 :: (Input -> Int) -> IO ()
 s1 go =
@@ -23,6 +23,15 @@ go1 :: Input -> Int
 go1 (seeds, maps) =
   minimum $ foldl step seeds maps
   where
+    step xs (_, rangeMaps) = fmap (next rangeMaps) xs
+    next rangeMaps x =
+      fromMaybe x . getFirst $ foldMap (First . doRangeMap x) rangeMaps
+
+go1' :: Input -> Int
+go1' (seeds, maps) =
+  minimum $ foldl step (pairUp (toList seeds) >>= expandRange) maps
+  where
+    expandRange (lo,size) = take size [lo..]
     step xs (_, rangeMaps) = fmap (next rangeMaps) xs
     next rangeMaps x =
       fromMaybe x . getFirst $ foldMap (First . doRangeMap x) rangeMaps
