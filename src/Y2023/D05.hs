@@ -3,16 +3,18 @@
 module Y2023.D05 (solutions) where
 
 import Data.Char (isAlpha)
-import Data.Foldable (toList)
+import Data.Foldable (toList, foldl')
 import Data.List (sort, sortOn)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (fromMaybe)
 import Data.Monoid (First(..))
 
+import Control.Parallel.Strategies
+
 import Util.Parser
 
 solutions :: [IO ()]
-solutions = [s1 go1, s1 go2, s1 go1']
+solutions = [s1 go1, s1 go2, s1 go1', s1 goPar]
 
 s1 :: (Input -> Int) -> IO ()
 s1 go =
@@ -35,6 +37,23 @@ go1' (seeds, maps) =
     step xs (_, rangeMaps) = fmap (next rangeMaps) xs
     next rangeMaps x =
       fromMaybe x . getFirst $ foldMap (First . doRangeMap x) rangeMaps
+
+goPar :: Input -> Int
+goPar (seeds, maps) =
+  minimum
+    $ withStrategy (parBuffer 500 rseq)
+    $ fmap (minimum . fmap trace)
+    $ chunk 10000 allSeeds
+  where
+    allSeeds = pairUp (toList seeds) >>= expandRange
+    expandRange (lo,size) = take size [lo..]
+
+    trace seed = foldl' next seed $ fmap snd maps
+    next x rangeMaps =
+      fromMaybe x . getFirst $ foldMap (First . doRangeMap x) rangeMaps
+
+    chunk _ [] = []
+    chunk n xs = as : chunk n bs where (as,bs) = splitAt n xs
 
 doRangeMap :: Int -> RangeMap -> Maybe Int
 doRangeMap x (dst0, src0, size)
