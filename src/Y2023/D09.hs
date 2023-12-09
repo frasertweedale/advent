@@ -5,7 +5,7 @@ import Data.Foldable (toList)
 import Util.Parser
 
 solutions :: [IO ()]
-solutions = [s1 go1]
+solutions = [s1 go1, s1 go2]
 
 s1 :: (Show a) => (Input -> a) -> IO ()
 s1 go =
@@ -13,17 +13,20 @@ s1 go =
   >>= print . go . maybe (error "parse failed") fst . runParser parseInput
 
 go1 :: Input -> Int
-go1 = sum . fmap (last . head . extend)
+go1 = sum . fmap (last . head . extend (+) . history)
 
--- | Generate an extended history of the line
-extend :: Line -> [Line]
-extend = scanr1 merge . history
+go2 :: Input -> Int
+go2 = sum . fmap (last . head . extend (-) . fmap reverse . history)
+
+-- | Generate the history of a line
+extend :: (Int -> Int -> Int) -> [Line] -> [Line]
+extend op = scanr1 merge
   where
-  merge xs diffs = head xs : zipWith (+) xs diffs
+  merge xs diffs = head xs : zipWith op xs diffs
 
 -- | Generate history for the line.
 -- Output includes the initial line.
--- The final line is an infinite repetition of `0`.
+-- The final line (all zeros) is extended with one additional zero.
 --
 history :: Line -> [Line]
 history xs
