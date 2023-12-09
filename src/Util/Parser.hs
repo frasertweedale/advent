@@ -1,3 +1,5 @@
+{-# LANGUAGE ApplicativeDo #-}
+
 module Util.Parser
   ( Parser(..)
   , endOfInput
@@ -48,7 +50,9 @@ char :: Char -> Parser Char
 char c = satisfy (== c)
 
 int :: Parser Int
-int = read <$> digits
+int = do
+  (negate <$ char '-' <|> pure id)
+  <*> (read <$> digits)
   where
   digits = (:) <$> satisfy isDigit <*> many (satisfy isDigit)
 
