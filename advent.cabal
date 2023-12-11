@@ -52,5 +52,6 @@ executable advent
       Y2023.D08
       Y2023.D09
       Y2023.D10
+      Y2023.D11
     build-depends:
       base >= 4.16
