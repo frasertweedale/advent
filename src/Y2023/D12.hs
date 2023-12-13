@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TupleSections #-}
-
 module Y2023.D12 (solutions) where
 
 import Data.Foldable

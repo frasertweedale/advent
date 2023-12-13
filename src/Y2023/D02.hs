@@ -1,5 +1,3 @@
-{-# LANGUAGE ApplicativeDo #-}
-
 module Y2023.D02 (solutions) where
 
 import Data.List.NonEmpty (NonEmpty)

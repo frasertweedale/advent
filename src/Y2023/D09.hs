@@ -22,7 +22,7 @@ go2 = sum . fmap (last . head . extend (-) . fmap reverse . history)
 extend :: (Int -> Int -> Int) -> [Line] -> [Line]
 extend op = scanr1 merge
   where
-  merge xs diffs = head xs : zipWith op xs diffs
+  merge xs deltas = head xs : zipWith op xs deltas
 
 -- | Generate history for the line.
 -- Output includes the initial line.

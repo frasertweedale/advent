@@ -1,5 +1,3 @@
-{-# LANGUAGE ApplicativeDo #-}
-
 module Y2023.D05 (solutions) where
 
 import Data.Char (isAlpha)

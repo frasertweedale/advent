@@ -1,5 +1,3 @@
-{-# LANGUAGE ApplicativeDo #-}
-
 module Util.Parser
   ( Parser(..)
   , endOfInput

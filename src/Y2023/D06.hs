@@ -1,5 +1,3 @@
-{-# LANGUAGE ApplicativeDo #-}
-
 module Y2023.D06 (solutions) where
 
 import Util.Parser

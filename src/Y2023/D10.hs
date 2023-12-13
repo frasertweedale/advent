@@ -1,5 +1,3 @@
-{-# LANGUAGE ApplicativeDo #-}
-
 module Y2023.D10 (solutions) where
 
 import Data.Maybe (fromMaybe)
