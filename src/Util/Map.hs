@@ -4,6 +4,7 @@ module Util.Map
   ( Map
   , empty
   , insert
+  , insertWith
   , member
   , lookup
   , fromList
