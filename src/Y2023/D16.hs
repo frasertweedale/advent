@@ -5,15 +5,34 @@ import Data.List.NonEmpty (groupWith)
 import qualified Util.Map as Map
 
 solutions :: [IO ()]
-solutions = [s1 go1]
+solutions = [s1, s2]
 
-s1 :: (Show a) => (Graph -> a) -> IO ()
-s1 go =
+s1 :: IO ()
+s1 =
   getContents
-  >>= print . go . parseInput
+  >>= print . (\g -> energised g ((0,0), R)) . parseInput
 
-go1 :: Graph -> Int
-go1 g = length . groupWith fst . Map.keys $ dfs ((0,0), R) Map.empty
+s2 :: IO ()
+s2 = do
+  s <- getContents
+  let
+    g = parseInput s
+  print $ maximum $ fmap (energised g) (starts s)
+
+starts :: String -> [(Location, Direction)]
+starts s =
+  fmap (\y -> ((y, 0), R)) [0..nRows - 1]
+  <> fmap (\y -> ((y, nCols - 1), L)) [0..nRows - 1]
+  <> fmap (\x -> ((0, x), D)) [0..nCols - 1]
+  <> fmap (\x -> ((nRows - 1, x), U)) [0..nCols - 1]
+  where
+  rows = lines s
+  nRows = length rows
+  row = head rows
+  nCols = length row
+
+energised :: Graph -> (Location, Direction) -> Int
+energised g start = length . groupWith fst . Map.keys $ dfs start Map.empty
   where
   dfs
     :: (Location, Direction)
