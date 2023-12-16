@@ -9,6 +9,8 @@ module Util.Map
   , lookup
   , fromList
   , depth
+  , size
+  , keys
   ) where
 
 import Prelude hiding (lookup)
@@ -96,3 +98,11 @@ fromList = foldr (\(k,v) -> insert k v) empty
 depth :: Map k v -> Int
 depth Leaf = 0
 depth (Node _ _ l r) = 1 + max (depth l) (depth r)
+
+size :: Map k v -> Int
+size Leaf = 0
+size (Node _ _ l r) = 1 + size l + size r
+
+keys :: Map k v -> [k]
+keys Leaf = []
+keys (Node _ (k,_) l r) = keys l <> (k : keys r)
