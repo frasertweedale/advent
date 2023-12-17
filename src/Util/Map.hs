@@ -11,6 +11,7 @@ module Util.Map
   , depth
   , size
   , keys
+  , toList
   ) where
 
 import Prelude hiding (lookup)
@@ -104,5 +105,8 @@ size Leaf = 0
 size (Node _ _ l r) = 1 + size l + size r
 
 keys :: Map k v -> [k]
-keys Leaf = []
-keys (Node _ (k,_) l r) = keys l <> (k : keys r)
+keys = fmap fst . toList
+
+toList :: Map k v -> [(k,v)]
+toList Leaf = []
+toList (Node _ (k,v) l r) = toList l <> ((k,v) : toList r)
