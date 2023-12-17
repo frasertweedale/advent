@@ -10,16 +10,16 @@ import Data.Maybe (mapMaybe)
 import qualified Util.Map as Map
 
 solutions :: [IO ()]
-solutions = [s1 minimiseHeatLoss]
+solutions = [ s1 steps [1..3], s1 ultraSteps [4..10] ]
 
-s1 :: (Show a) => (Graph -> a) -> IO ()
-s1 go =
+s1 :: Stepper -> [Int] -> IO ()
+s1 stepper endRuns =
   getContents
-  >>= print . go . parseInput
+  >>= print . minimiseHeatLoss stepper endRuns . parseInput
 
-minimiseHeatLoss :: Graph -> Int
-minimiseHeatLoss g =
-  go Map.empty [StepState 0 start R 0]
+minimiseHeatLoss :: Stepper -> [Int] -> Graph -> Int
+minimiseHeatLoss stepper endRuns g =
+  go Map.empty [StepState 0 start R 0, StepState 0 start D 0]
   where
   start = minimum $ Map.keys g
   dest  = maximum $ Map.keys g
@@ -38,7 +38,7 @@ minimiseHeatLoss g =
         $ sortBy (compare `on` (\(StepState x loc dir n) -> (loc,dir,n,x)))
 
         -- generate potential next steps
-        $ locs >>= steps g
+        $ locs >>= stepper g
 
       seen' = foldr' update seen next
     in
@@ -46,7 +46,7 @@ minimiseHeatLoss g =
         [] ->
           minimum
           $ mapMaybe (\k -> Map.lookup k seen')
-          [ (dest,dir,n) | dir <- [U,D,L,R], n <- [1..3] ]
+          [ (dest,dir,n) | dir <- [U,D,L,R], n <- endRuns ]
         _  -> go seen' next
 
   update
@@ -58,23 +58,46 @@ minimiseHeatLoss g =
 back :: Direction -> Direction
 back  = \case U -> D ; D -> U ; L -> R ; R -> L
 
+
+-- | Function for getting allowed next steps
+type Stepper = Graph -> StepState -> [StepState]
+
 -- Step in all possible directions
-steps :: Graph -> StepState -> [StepState]
-steps g (StepState acc (y,x) dir n) =
+steps, ultraSteps :: Stepper
+steps = mkStepper applyDirNormal
+ultraSteps = mkStepper applyDirUltra
+
+type StepFilter =
+     Direction  -- ^ Current direction
+  -> Int        -- ^ Steps in current direction
+  -> Direction  -- ^ Possible next direction
+  -> (Direction -> Int -> StepState)
+  -> Maybe StepState
+
+mkStepper :: StepFilter -> Stepper
+mkStepper applyDir g (StepState acc (y,x) dir n) =
   mapMaybe (applyHeatLoss g)
-  $ mapMaybe (uncurry applyDir)
+  $ mapMaybe (uncurry (applyDir dir n))
   $ [ (U, StepState acc (y - 1, x))
     , (D, StepState acc (y + 1, x))
     , (L, StepState acc (y, x - 1))
     , (R, StepState acc (y, x + 1))
     ]
-  where
-  applyDir :: Direction -> (Direction -> Int -> r) -> Maybe r
-  applyDir dir' f
-    | dir' == dir, n >= 3 = Nothing
-    | dir' == dir         = Just (f dir' (n + 1))
-    | dir' == back dir    = Nothing
-    | otherwise           = Just (f dir' 1)
+
+applyDirNormal :: StepFilter
+applyDirNormal dir n dir' f
+  | dir' == dir, n >= 3 = Nothing
+  | dir' == dir         = Just (f dir' (n + 1))
+  | dir' == back dir    = Nothing
+  | otherwise           = Just (f dir' 1)
+
+applyDirUltra :: StepFilter
+applyDirUltra dir n dir' f
+  | dir' == dir, n >= 10  = Nothing
+  | dir' == dir           = Just (f dir' (n + 1))
+  | dir' == back dir      = Nothing
+  | n < 4 {-change dir-}  = Nothing
+  | otherwise             = Just (f dir' 1)
 
 applyHeatLoss :: Graph -> StepState -> Maybe StepState
 applyHeatLoss g (StepState acc loc dir n) =
