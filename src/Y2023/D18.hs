@@ -1,9 +1,6 @@
 module Y2023.D18 (solutions) where
 
 import Data.Foldable (toList)
-import Data.List (sort)
-import Data.List.NonEmpty (groupWith)
-import qualified Data.List.NonEmpty as NonEmpty
 import Data.Word (Word8)
 
 import Util.Parser
@@ -30,37 +27,27 @@ draw =
 
 go2 :: Input -> IO ()
 go2 input =
-  print $ sum $ fmap (\(dy, spans, extra) -> dy * gaps spans + extra)
-  $ go 0 []
-  $ fmap (\row -> (fst (NonEmpty.head row), toList (fmap snd row)))
-  $ groupWith fst
-  $ sort
-  $ pointPath input
+  print
+    -- Add half the path length (plus one).  The area computed
+    -- is as from the midpoints of the paths.  However it meanders,
+    -- the path does one revolution (to close the path).  So we
+    -- need n path segments * 1/2m² + 4 corners * 1/4m².
+    $ (+ (pathLen `div` 2 + 1))
+    $ abs  -- area may be negative, take absolute value
+    $ go (head path)
+    $ pointPath input
   where
-  go _ _ [] = []
-  go y spans ((y', xs):rows) =
-    let
-      joined = joinSpans spans xs
-      extraPath = sum $ fmap fst joined
-      spans' = fmap snd joined
-      -- Filter out the dummy (0,0) spans (these are paired with
-      -- horizontal path segments wider than the resulting span).
-      filteredSpans' = filter (/= (0,0)) spans'
-      fusedSpans' = fuseSpans filteredSpans'
-      -- For each join there is an "overlap" of 1, which
-      -- needs to be subtracted.
-      joins = length filteredSpans' - length fusedSpans'
-    in
-      ((y' - y), spans, extraPath - joins) : go y' fusedSpans' rows
+    pathLen = sum (fmap snd input)
+    path = pointPath input
+    ymax = maximum $ fmap fst path
+    (ystart,xstart) = head path
 
-  fuseSpans :: [Span] -> [Span]
-  fuseSpans = \case
-    []                                      -> []
-    ((lo1,hi1):(lo2,hi2):more) | hi1 == lo2 -> fuseSpans ((lo1,hi2):more)
-    ((x1,x2):more)                          -> (x1,x2) : fuseSpans more
-
-  gaps :: [Span] -> Int
-  gaps = sum . fmap (\(x1,x2) -> x2 - x1 + 1)
+    -- When moving right, add the area under the path.
+    -- When moving left, subtract the area under the path.
+    go (_,x1) [] =
+      (xstart - x1) * (ymax - ystart)
+    go (_,x1) ((y2,x2):more) =
+      (x2 - x1) * (ymax - y2 - 1) + go (y2,x2) more
 
 drawPath :: Input -> String
 drawPath input =
@@ -79,54 +66,6 @@ drawPath input =
   extents = ((ymin,xmin),(ymax,xmax))
   pathMap = foldr (\k -> Map.insert k ()) Map.empty path
 
-
-type Span = (Int, Int) -- (lo,hi)
-
-joinSpans :: [Span] -> [Int] -> [(Int, Span)]
-joinSpans [] (lo:hi:xs)  = (hi - lo + 1, (lo,hi)) : joinSpans [] xs
-joinSpans spans []       = fmap (0,) spans
-joinSpans _     [_]      = error "can't happen"
-
-joinSpans ((lo1,hi1):(lo2,hi2):more) (x1:x2:xs)
-  --  |##|___|##...   there could be multiple spans fusing, so we have to
-  --  |#########...   push the expanded span back onto the span list
-  | x1 == hi1, x2 == lo2 = (x2 - x1 - 1, (0,0)) : joinSpans ((lo1,hi2):more) xs
-                                      -- ^^^^^ fake it, filter later
-
-joinSpans spans@((lo,hi):more) (x1:x2:xs)
-  --  ____  |##|
-  --  |##|  |##|
-  | x2 < lo             = (x2 - x1 + 1, (x1,x2))  : joinSpans spans xs
-
-  --  |##|  ____
-  --  |##|  |##|
-  | x1 > hi             = (0,           (lo,hi))  : joinSpans more (x1:x2:xs)
-
-  --  |##|
-  --   ▔▔
-  | (x1,x2) == (lo,hi)  =                           joinSpans more xs
-
-  --  |##|______
-  --  |########|
-  | x1 == hi            = (x2 - hi,     (lo,x2))  : joinSpans more xs
-
-  --  ______|##...
-  --  |########...
-  | x2 == lo            = (lo - x1,       (0,0))  : joinSpans ((x1,hi):more) xs
-
-  --  |########...
-  --  ▔▔▔▔▔▔|##...
-  | x1 == lo            = (x1 - lo,       (0,0))  : joinSpans ((x2,hi):more) xs
-
-  --  |########|
-  --  |##|▔▔▔▔▔▔
-  | x2 == hi            = (hi - x2,     (lo,x1))  : joinSpans more xs
-
-  --  |#########...
-  --  |##|▔▔▔|##...
-  | x2 < hi             = (0,           (lo,x1))  : joinSpans ((x2,hi):more) xs
-
-  | otherwise           = error $ "bad: " <> show (x1,x2) <> show (lo,hi)
 
 digPath :: Input -> [Location]
 digPath = go (0,0)
