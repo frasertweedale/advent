@@ -45,6 +45,7 @@ executable advent
     other-modules:
       Util.Map
       Util.Parser
+      Y2023.D20
       Y2023.D19
       Y2023.D18
       Y2023.D17
