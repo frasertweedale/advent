@@ -2,7 +2,8 @@ module Y2023.D20 (solutions) where
 
 import Control.Applicative
 import Data.Char (isAlpha)
-import Data.List (partition)
+import Data.Maybe (fromMaybe, isJust)
+import Data.List (find, findIndex, partition)
 import Data.List.NonEmpty (groupAllWith)
 import qualified Data.List.NonEmpty as NonEmpty
 
@@ -12,12 +13,13 @@ import qualified Util.Map as Map
 import Util.Parser
 
 solutions :: [IO ()]
-solutions = [s1 go1]
+solutions = [s1 go1, s1 go2]
 
 s1 :: (Show a) => (Input -> a) -> IO ()
 s1 go =
   getContents
-  >>= print . go . maybe (error "parse failed") fst . runParser parseInput
+  >>= print . go . initialise
+      . maybe (error "parse failed") fst . runParser parseInput
 
 go1 :: Input -> Int
 go1 =
@@ -28,9 +30,59 @@ go1 =
   . take 1000
   . drop 1
   . iterate push . (,[])
-  . initialise
   where
     push (state, _) = pushButton state
+
+type PulsePattern = (Pulse, String, String) -- ^ (pulse, src, dst)
+
+go2 :: Input -> Int
+go2 nw =
+  -- The least-common-multiple of the number of cycles to each
+  -- required pulse occurrence is the result.
+  foldr1 lcm $ fmap pushesToPulse requiredPulses
+  where
+    -- Determine the number of button pushes for a given pulse to occur.
+    pushesToPulse :: PulsePattern -> Int
+    pushesToPulse pat =
+      fromMaybe (-1)
+      . findIndex (isJust . find (== pat))
+      . fmap snd
+      . iterate (\(state, _) -> pushButton state)
+      $ (nw,[])
+
+    sourcesFor :: String -> [(String, (String, (Module, [String])))]
+    sourcesFor dst =
+      fmap (dst,)
+      <$> filter (\(_,(_,dsts)) -> dst `elem` dsts) (Map.toList nw)
+
+    -- Inspect the acyclic part of the graph leading to "rx".
+    -- Extract the set of pulse conditions that result in low
+    -- pulse to "rx" through this acyclic segment of the graph.
+    requiredPulses :: [PulsePattern]
+    requiredPulses = sourcesFor "rx" >>= go Low
+      where
+      go pulse (dst, (src, v)) = case v of
+        (Conjunction memory, [_]) ->
+          -- Conjunction, only one output
+          case (pulse, Map.keys memory) of
+            (Low, srcSrcs) ->
+              -- All inbound pulses must be High
+              srcSrcs >>= \srcSrc -> case Map.lookup srcSrc nw of
+                Nothing -> error "can't happen"
+                Just v' -> go High (src, (srcSrc, v'))
+            (High, [srcSrc]) ->
+              -- Single-input Conjunction, i.e. "inverter".
+              -- Input signal must be "Low"
+              case Map.lookup srcSrc nw of
+                Nothing -> error "can't happen"
+                Just v' -> go Low (src, (srcSrc, v'))
+            _ ->
+              -- Too much uncertainty; terminate here
+              pure (pulse, src, dst)
+        _ ->
+          -- Source module is not a Conjunction, or has multiple
+          -- destinations.  Too much uncertainty; terminate here.
+          pure (pulse, src, dst)
 
 type Input = Network
 type Network = Map.Map String (Module, [String])
