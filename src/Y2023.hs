@@ -1,5 +1,6 @@
 module Y2023 (days) where
 
+import qualified Y2023.D21
 import qualified Y2023.D20
 import qualified Y2023.D19
 import qualified Y2023.D18
@@ -24,6 +25,7 @@ import qualified Y2023.D01
 days :: [[IO ()]]
 days = reverse $ tail
   [ []  -- simplify editing;
+  , Y2023.D21.solutions
   , Y2023.D20.solutions
   , Y2023.D19.solutions
   , Y2023.D18.solutions
